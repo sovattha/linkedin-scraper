@@ -50,9 +50,11 @@ require("dotenv").config();
 
   // Write profile details to a JSON file
   fs.writeFileSync(`./results.json`, JSON.stringify(profiles, null, 2));
+  // Write profile details to a CSV file
   const csv = stringify(profiles, { delimiter: ',', quote: '"', header: true });
   console.log(csv);  
   fs.writeFileSync(`./results.csv`, csv);
+
   process.exit(0);
 })();
 
@@ -78,12 +80,32 @@ async function extractProfileDetails(page, profileUrl) {
     selectorPath: ".pv-text-details__left-panel > .text-body-medium",
   });
   console.log("title", title);
-  const [company] = await extractHref({
+  let [companyUrl] = await extractHref({
     selectorPath: '[data-field="experience_company_logo"]',
   });
-  console.log("company", company);
+  console.log("companyUrl", companyUrl);
 
-  return { company, name, title };
+  // Load the real company URL
+  let companyName;
+  try {
+    await page.goto(companyUrl);
+    await page.goto(page.url() + '/about');
+    companyUrl = (await extractHref({
+      xpath: `//dl/dd[1]/a`,
+    }))[0];
+    console.log("companyUrl", companyUrl);
+    
+    companyName = (await extractText({
+      selectorPath: 'h1',
+    }))[0];
+    console.log("companyName", companyName);
+    
+  } catch (e) {
+    console.error("page goto", e);
+    throw new Error("Error connecting");
+  }
+
+  return { companyName, companyUrl, name, title };
 
   // Helper function to extract text from a given selector
   async function extractText({ xpath, selectorPath }) {
@@ -113,16 +135,35 @@ async function extractProfileDetails(page, profileUrl) {
       xpath
         ? await page.waitForXPath(xpath, { timeout: 10000 })
         : await page.waitForSelector(selectorPath, { timeout: 10000 });
-      const cellHandles = xpath
+      const handles = xpath
         ? await page.$x(xpath)
         : await page.$$(selectorPath);
       return await Promise.all(
-        cellHandles.map((cellHandle) =>
+        handles.map((cellHandle) =>
           page.evaluate((cell) => cell.getAttribute("href"), cellHandle)
         )
       );
     } catch (e) {
       console.error(`extractHref timeout ${{ xpath, selectorPath }}`, e);
+    }
+  }
+
+  // Helper function to extract alt from a given selector
+  async function extractAlt({ xpath, selectorPath }) {
+    try {
+      xpath
+        ? await page.waitForXPath(xpath, { timeout: 10000 })
+        : await page.waitForSelector(selectorPath, { timeout: 10000 });
+      const handles = xpath
+        ? await page.$x(xpath)
+        : await page.$$(selectorPath);
+      return await Promise.all(
+        handles.map((cellHandle) =>
+          page.evaluate((cell) => cell.getAttribute("alt"), cellHandle)
+        )
+      );
+    } catch (e) {
+      console.error(`extractAlt timeout ${{ xpath, selectorPath }}`, e);
     }
   }
 }
