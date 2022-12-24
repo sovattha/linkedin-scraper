@@ -85,10 +85,17 @@ async function extractProfileDetails(page, profileUrl) {
   });
   console.log("companyUrl", companyUrl);
 
-  const [companyName] = await extractText({
+  let companyName;
+  companyName = (await extractText({
     selectorPath: '[data-field="experience_company_logo"] > div > span > span',
-  });
-  console.log("companyName", companyName);
+  }))?.[0];
+  console.log("companyName attempt 1", companyName);
+  if (!companyName) {
+    companyName = (await extractText({
+      selectorPath: '.pvs-entity div span.t-normal span',
+    }))?.[0];
+    console.log("companyName attempt 2", companyName);  
+  }
 
   // Load the real company URL
   try {
@@ -104,7 +111,7 @@ async function extractProfileDetails(page, profileUrl) {
     console.error("page goto", e);
   }
 
-  return { companyName: companyName.replace(/ logo$/, ''), companyUrl, name, title };
+  return { companyName: companyName?.replace(/ logo$/, ''), companyUrl, name, title };
 
   // Helper function to extract text from a given selector
   async function extractText({ xpath, selectorPath }) {
