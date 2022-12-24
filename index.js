@@ -85,27 +85,26 @@ async function extractProfileDetails(page, profileUrl) {
   });
   console.log("companyUrl", companyUrl);
 
+  const [companyName] = await extractText({
+    selectorPath: '[data-field="experience_company_logo"] > div > span > span',
+  });
+  console.log("companyName", companyName);
+
   // Load the real company URL
-  let companyName;
   try {
-    await page.goto(companyUrl);
-    await page.goto(page.url() + '/about');
+    console.log('Go to company page', companyUrl);
+    await page.goto(companyUrl, { timeout: 10000 });
+    console.log('Go to company about page', page.url() + '/about');
+    await page.goto(page.url() + '/about', { timeout: 10000 });
     companyUrl = (await extractHref({
       xpath: `//dl/dd[1]/a`,
     }))?.[0];
     console.log("companyUrl", companyUrl);
-    
-    companyName = (await extractText({
-      selectorPath: 'h1',
-    }))?.[0];
-    console.log("companyName", companyName);
-    
   } catch (e) {
     console.error("page goto", e);
-    throw new Error("Error connecting");
   }
 
-  return { companyName, companyUrl, name, title };
+  return { companyName: companyName.replace(/ logo$/, ''), companyUrl, name, title };
 
   // Helper function to extract text from a given selector
   async function extractText({ xpath, selectorPath }) {
