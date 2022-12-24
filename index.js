@@ -2,6 +2,7 @@
 const fs = require("fs");
 const { resolve } = require("path");
 const puppeteer = require("puppeteer");
+const {stringify} = require('csv-stringify/sync');
 require("dotenv").config();
 
 (async () => {
@@ -49,6 +50,9 @@ require("dotenv").config();
 
   // Write profile details to a JSON file
   fs.writeFileSync(`./results.json`, JSON.stringify(profiles, null, 2));
+  const csv = stringify(profiles, { delimiter: ',', quote: '"', header: true });
+  console.log(csv);  
+  fs.writeFileSync(`./results.csv`, csv);
   process.exit(0);
 })();
 
@@ -92,7 +96,10 @@ async function extractProfileDetails(page, profileUrl) {
         : await page.$$(selectorPath);
       return await Promise.all(
         handles.map((cellHandle) =>
-          page.evaluate((cell) => cell.textContent?.replace(/\s\s+/g, " ").trim(), cellHandle)
+          page.evaluate(
+            (cell) => cell.textContent?.replace(/\s\s+/g, " ").trim(),
+            cellHandle
+          )
         )
       );
     } catch (e) {
