@@ -92,12 +92,12 @@ async function extractProfileDetails(page, profileUrl) {
     await page.goto(page.url() + '/about');
     companyUrl = (await extractHref({
       xpath: `//dl/dd[1]/a`,
-    }))[0];
+    }))?.[0];
     console.log("companyUrl", companyUrl);
     
     companyName = (await extractText({
       selectorPath: 'h1',
-    }))[0];
+    }))?.[0];
     console.log("companyName", companyName);
     
   } catch (e) {
