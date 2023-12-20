@@ -26,10 +26,10 @@ require("dotenv").config();
   await page.click("#session_password");
   await page.type("#session_password", process.env.LINKEDIN_PASSWORD);
   await page.waitForSelector(
-    ".section > .self-start > .sign-in-form-container > .sign-in-form > .sign-in-form__submit-button"
+    "div.flex.justify-between.sign-in-form__footer--full-width > button"
   );
   await page.click(
-    ".section > .self-start > .sign-in-form-container > .sign-in-form > .sign-in-form__submit-button"
+    "div.flex.justify-between.sign-in-form__footer--full-width > button"
   );
   await page.waitForSelector(".feed-identity-module__member-bg-image");
 
@@ -73,11 +73,11 @@ async function extractProfileDetails(page, profileUrl) {
 
   // Extract profile details
   const [name] = await extractText({
-    selectorPath: ".pv-text-details__left-panel > div > h1",
+    selectorPath: "#ember31 > h1",
   });
   console.log("name", name);
   const [title] = await extractText({
-    selectorPath: ".pv-text-details__left-panel > .text-body-medium",
+    selectorPath: "#profile-content div.pv-text-details__left-panel--full-width > div.text-body-medium.break-words",
   });
   console.log("title", title);
   let [companyUrl] = await extractHref({
@@ -117,8 +117,8 @@ async function extractProfileDetails(page, profileUrl) {
   async function extractText({ xpath, selectorPath }) {
     try {
       xpath
-        ? await page.waitForXPath(xpath, { timeout: 1000 })
-        : await page.waitForSelector(selectorPath, { timeout: 1000 });
+        ? await page.waitForXPath(xpath, { timeout: 3000 })
+        : await page.waitForSelector(selectorPath, { timeout: 3000 });
       const handles = xpath
         ? await page.$x(xpath)
         : await page.$$(selectorPath);
